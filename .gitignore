@@ -1,0 +1,16 @@
+# NEVER commit plaintext credential exports or converter output.
+source_files/
+out/
+*.1pux
+*.zip
+*_attachments/
+*-report.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# stray export saved under docs (real credentials)
+docs/roundtrip
+.DS_Store
