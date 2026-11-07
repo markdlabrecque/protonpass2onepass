@@ -3,6 +3,7 @@
 
     python3 convert.py --in export.zip --out account.1pux [--alias-as login|note]
                        [--skip itemId,itemId] [--email you@example.com]
+                       [--single-vault NAME]
 
 Standard library only. Reads/writes local paths. Never prints field values.
 """
@@ -135,6 +136,8 @@ def main() -> int:
                     help="also convert items in Proton's trash (state=2); default skips them")
     ap.add_argument("--email", default="import@example.com",
                     help="cosmetic account email written into the export")
+    ap.add_argument("--single-vault", metavar="NAME",
+                    help="put every item in one vault, tagged with its Proton vault name")
     opts = ap.parse_args()
 
     if not os.path.isfile(opts.inp):
@@ -152,6 +155,7 @@ def main() -> int:
     known = {"login", "alias", "note", "custom", "creditCard", "identity"}
 
     vault_blocks = []
+    flat_items = []
     for vid, vault in export.vaults.items():
         vname = vault.get("name", "") or "Proton Pass"
         items = vault.get("items", []) or []
@@ -184,6 +188,9 @@ def main() -> int:
                 items_with_files.append(item)
 
             one_item, itype = map_item(item, opts)
+            if opts.single_vault:
+                # 1Password nests tags on '/'
+                one_item["overview"]["tags"] = [re.sub(r"\s*/\s*", " or ", vname)]
             out_items.append(one_item)
             converted += 1
             pv["conv"] += 1
@@ -191,9 +198,15 @@ def main() -> int:
             if itype not in known:
                 unknown_types[itype] = unknown_types.get(itype, 0) + 1
 
+        if opts.single_vault:
+            flat_items += out_items
+            continue
         vtype = VAULT_TYPE.get(vault.get("type", ""), "U") if not vault_blocks else "U"
         vault_blocks.append(writer.vault_block(vname, vault.get("description", ""),
                                                out_items, vtype))
+
+    if opts.single_vault:
+        vault_blocks = [writer.vault_block(opts.single_vault, "", flat_items, "P")]
 
     account = writer.account_block(vault_blocks, email=opts.email)
     writer.write(opts.out, [account])

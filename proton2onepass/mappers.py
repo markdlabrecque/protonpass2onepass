@@ -75,16 +75,20 @@ def _month_year(raw):
 
 # ---- field / section builders ----------------------------------------------
 
-def _field(title, value, guarded=False, multiline=False):
+def _field(title, value, guarded=False, multiline=False, field_id=None):
     return {
         "title": title or "",
-        "id": new_id(),
+        "id": field_id or new_id(),
         "value": value,
         "guarded": guarded,
         "multiline": multiline,
         "dontGenerate": False,
         "inputTraits": dict(_TRAITS),
     }
+
+
+def _totp_field(title, uri):
+    return _field(title, _totp(uri), field_id=f"TOTP_{new_id()}")
 
 
 def _section(title, fields, name=""):
@@ -125,7 +129,7 @@ def _extra_fields(data):
         elif t == "totp":
             uri = d.get("totpUri") or d.get("content") or ""
             if uri:
-                out.append(_field(name or "one-time password", _totp(uri)))
+                out.append(_totp_field(name or "one-time password", uri))
         elif t == "timestamp":
             out.append(_field(name, _date(d.get("timestamp"))))
         else:
@@ -185,7 +189,7 @@ def map_login(item, opts):
     sections = []
     totp = c.get("totpUri") or ""
     if totp:
-        sections.append(_section("", [_field("one-time password", _totp(totp))], name="add more"))
+        sections.append(_section("", [_totp_field("one-time password", totp)], name="add more"))
     extra += _extra_fields(data)
     if extra:
         sections.append(_section("", extra, name=new_id()))

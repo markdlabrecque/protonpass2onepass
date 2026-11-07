@@ -36,6 +36,7 @@ python3 convert.py --in "source_files/your-export.zip" --out out/account.1pux
 | `--include-trashed` | off | also convert items in Proton's trash (`state=2`) |
 | `--skip id,id` | — | Proton `itemId`s to omit |
 | `--email addr` | `import@example.com` | cosmetic account email in the export |
+| `--single-vault NAME` | off | put every item in one vault, tagged with its Proton vault name (`A / B` becomes `A or B`) |
 
 ## Output
 
